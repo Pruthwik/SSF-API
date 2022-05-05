@@ -216,19 +216,18 @@ class Sentence():
                 self.probSent = True
             else:
                 splitLine = stripLine.split()
-                if len(splitLine) > 0 and splitLine[0] == '))':
-                    currentChunkNode.footer = line + '\n'
-                    currentChunkNode.analyzeChunk()
-                    lastContext = currentChunkNode.upper
-                    currentChunkNode = lastContext
-
-                elif len(splitLine) > 1 and splitLine[1] == '((':
+                if len(splitLine) > 1 and splitLine[1] == '((':
                     currentChunkNode = ChunkNode(line + '\n')
                     currentChunkNode.upper = lastContext
                     currentChunkNode.upper.nodeList.append(currentChunkNode)
                     if currentChunkNode.upper.__class__.__name__ != 'Sentence':
                         currentChunkNode.upper.text.append(line)
                     lastContext = currentChunkNode
+                elif len(splitLine) > 0 and splitLine[0] == '))':
+                    currentChunkNode.footer = line + '\n'
+                    currentChunkNode.analyzeChunk()
+                    lastContext = currentChunkNode.upper
+                    currentChunkNode = lastContext
                 else:
                     currentNode = Node(line + '\n')
                     lastContext.nodeList.append(currentNode)
@@ -308,7 +307,6 @@ class Document():
     def analyzeDocument(self):
 
         inputFD = codecs.open(self.fileName, 'r', encoding='utf8')
-#        sentenceList = getSentenceIter(inputFD)
         sentenceList = findSentences(inputFD)
         for sentence in sentenceList:
             tree = Sentence(sentence[1], ignoreErrors=True, nesting=True)
@@ -356,7 +354,6 @@ def getChunkFeats(line):
     fsList = []
     if len(lineList) >= 3:
         chunkType = lineList[2]
-
     returnFeats = OrderedDict()
     multipleFeatRE = r'<fs.*?>'
     featRE = r'(?:\W*)(\S+)=([\'|\"])?([^ \t\n\r\f\v\'\"]*)[\'|\"]?(?:.*)'
@@ -368,7 +365,6 @@ def getChunkFeats(line):
                 returnErrors.append('Feature with more than one value')
                 continue
             returnFeats[feat[0][0]] = feat[0][2]
-
     return [chunkType, returnFeats, fsList]
 
 
@@ -403,7 +399,7 @@ def getSentenceIter(inpFD):
 
 
 def findSentences(inpFD):
-    sentenceRE = "<Sentence id='(.*?)'>(.*?)(</Sentence>)"
+    sentenceRE = "<Sentence id='?\"?(.*?)'?\"?>(.*?)(</Sentence>)"
     text = inpFD.read()
     text = text.replace('0xe0', '')
     return re.findall(sentenceRE, text, re.DOTALL)
@@ -416,29 +412,32 @@ def folderWalk(folderPath):
             fileList.append(os.path.join(dirPath, fileName))
     return fileList
 
-'''
-if __name__ == '__main__':
 
-    inputPath = sys.argv[1]
-    fileList = folderWalk(inputPath)
-    newFileList = []
-    for fileName in fileList:
-        xFileName = fileName.split('/')[-1]
-        if xFileName == 'err.txt' or xFileName.split('.')[-1] in ['comments', 'bak'] or xFileName[:4] == 'task':
-            continue
-        else:
-            newFileList.append(fileName)
+# if __name__ == '__main__':
 
-    for fileName in newFileList:
-        d = Document(fileName)
-        for tree in d.nodeList:
-            for chunkNode in tree.nodeList:
-                for node in chunkNode.nodeList:
-                    print node.name
-                    # refAddress = node.getAttribute('ref')
-                    # if refAddress != None :
-                    #     refNode = getAddressNode(refAddress, node)
-                    #     print 'Anaphor' , node.printValue() , 'Reference' , refNode.printValue()
-#                        print tree.printSSFValue()
-#                        print tree.header + tree.text + tree.footer
-'''
+#     inputPath = sys.argv[1]
+#     fileList = folderWalk(inputPath)
+#     newFileList = []
+#     for fileName in fileList:
+#         xFileName = fileName.split('/')[-1]
+#         if xFileName == 'err.txt' or xFileName.split('.')[-1] in ['comments', 'bak'] or xFileName[:4] == 'task':
+#             continue
+#         else:
+#             newFileList.append(fileName)
+
+#     for fileName in newFileList:
+#         d = Document(fileName)
+#         for tree in d.nodeList:
+#             for chunkNode in tree.nodeList:
+#                 if chunkNode.type == 'VGF':
+#                     combinedTAM = ''
+#                     for node in chunkNode.nodeList:
+#                         if node.type != 'VM':
+#                             combinedTAM += node.lex + '+'
+#                     print('TAM', combinedTAM.strip('+'))
+#                     # refAddress = node.getAttribute('ref')
+#                     # if refAddress != None :
+#                     #     refNode = getAddressNode(refAddress, node)
+#                     #     print 'Anaphor' , node.printValue() , 'Reference' , refNode.printValue()
+# #                        print tree.printSSFValue()
+# #                        print tree.header + tree.text + tree.footer
